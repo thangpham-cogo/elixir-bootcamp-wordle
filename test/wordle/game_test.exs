@@ -7,7 +7,7 @@ defmodule Wordle.GameTest do
       assert Game.validate_word("hello", ["hello"]) == :ok
     end
 
-    test "returns :error if word is valid" do
+    test "returns :error if word is invalid" do
       assert Game.validate_word("ola", ["hello"]) == :error
     end
   end
