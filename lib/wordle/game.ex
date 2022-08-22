@@ -18,7 +18,7 @@ defmodule Wordle.Game do
     {pairs, initial_state} = prepare(guess, target)
 
     # reduce becomes complicated the momment the acc is not just a list
-    %{result: result} = Enum.reduce(pairs, initial_state, &compare/2)
+    {_, result} = Enum.reduce(pairs, initial_state, &compare/2)
 
     # hmm we can easily miss this, also reversing is an implementation details
     {:ok, Enum.reverse(result)}
@@ -32,19 +32,19 @@ defmodule Wordle.Game do
     found_list = target_list -- not_found
 
     pairs = Enum.zip(guess_list, target_list)
-    {pairs, %{found: found_list, result: []}}
+    {pairs, {found_list, []}}
   end
 
-  defp compare({guess, target}, %{found: found, result: result}) do
+  defp compare({guess, target}, {found, result}) do
     cond do
       guess == target ->
-        %{found: List.delete(found, guess), result: [:correct | result]}
+        {List.delete(found, guess), [:correct | result]}
 
       guess in found ->
-        %{found: List.delete(found, guess), result: [:wrong_place | result]}
+        {List.delete(found, guess), [:wrong_place | result]}
 
       true ->
-        %{found: found, result: [:wrong | result]}
+        {found, [:wrong | result]}
     end
   end
 end
