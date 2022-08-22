@@ -7,12 +7,13 @@ defmodule Wordle do
   @all_words_file_path "#{File.cwd!()}/priv/all_words.txt"
   @all_secrets_file_path "#{File.cwd!()}/priv/words.txt"
   @num_of_guesses 4
+  @type attempt() :: {guess :: String.t(), result :: Game.result_type()}
   @type game_state() :: %{
           prompt: String.t(),
           secret: String.t(),
           all_words: list(String.t()),
           num_of_guesses: non_neg_integer(),
-          attempts: list({guess :: String.t(), result :: Game.result_type()})
+          attempts: list(attempt())
         }
 
   def start(), do: loop(init_game_state())
@@ -29,7 +30,9 @@ defmodule Wordle do
   end
 
   @spec loop(game_state()) :: :ok
-  defp loop(%{secret: secret, num_of_guesses: 0}), do: Client.end_game(secret)
+  defp loop(%{secret: secret, num_of_guesses: num_of_guesses}) when num_of_guesses == 0 do
+    Client.end_game(secret)
+  end
 
   defp loop(state) do
     with guess <- Client.get_user_input(state.prompt),
