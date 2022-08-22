@@ -13,8 +13,8 @@ defmodule Wordle.GameTest do
   end
 
   describe "process_guess/2" do
-    test "returns :ok if guess matches target" do
-      assert Game.process_guess("hello", "hello") == :ok
+    test "returns :win if guess matches target" do
+      assert Game.process_guess("hello", "hello") == :win
     end
 
     test "returns :wrong for all letters in guess if none matches" do

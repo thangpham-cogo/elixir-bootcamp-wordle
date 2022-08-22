@@ -38,7 +38,7 @@ defmodule Wordle do
     with guess <- Client.get_user_input(state.prompt),
          :ok <- Game.validate_word(guess, state.all_words) do
       case Game.process_guess(guess, state.secret) do
-        :ok ->
+        :win ->
           Client.display_success(state.secret)
 
         {:ok, result} ->
