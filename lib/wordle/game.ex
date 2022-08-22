@@ -9,6 +9,8 @@ defmodule Wordle.Game do
     end
   end
 
+  @spec process_guess(guess :: String.t(), secret :: String.t()) ::
+          :ok | {:ok, list(result_type())}
   def process_guess(guess, secret)
   def process_guess(guess, guess), do: :ok
 
