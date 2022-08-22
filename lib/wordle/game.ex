@@ -1,10 +1,6 @@
 defmodule Wordle.Game do
   @type result_type() :: :correct | :wrong_place | :wrong
 
-  def check_guess(_guess) do
-    {:ok}
-  end
-
   @spec validate_word(String.t(), list(String.t())) :: :ok | :error
   def validate_word(word, all_words) do
     case word in all_words do
@@ -17,10 +13,12 @@ defmodule Wordle.Game do
   def process_guess(guess, guess), do: :ok
 
   def process_guess(guess, target) do
-    %{pairs: pairs, initial_state: initial_state} = prepare(guess, target)
+    {pairs, initial_state} = prepare(guess, target)
 
+    # reduce becomes complicated the momment the acc is not just a list
     %{result: result} = Enum.reduce(pairs, initial_state, &compare/2)
 
+    # hmm we can easily miss this, also reversing is an implementation details
     {:ok, Enum.reverse(result)}
   end
 
@@ -32,7 +30,7 @@ defmodule Wordle.Game do
     found_list = target_list -- not_found
 
     pairs = Enum.zip(guess_list, target_list)
-    %{pairs: pairs, initial_state: %{found: found_list, result: []}}
+    {pairs, %{found: found_list, result: []}}
   end
 
   defp compare({guess, target}, %{found: found, result: result}) do
