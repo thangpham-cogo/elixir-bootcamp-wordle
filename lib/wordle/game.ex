@@ -1,12 +1,14 @@
 defmodule Wordle.Game do
+  @type result_type() :: :correct | :wrong_place | :wrong
+
   def check_guess(_guess) do
     {:ok}
   end
 
-  @spec validate_word(String.t(), list(String.t())) :: {:ok, String.t()} | :error
+  @spec validate_word(String.t(), list(String.t())) :: :ok | :error
   def validate_word(word, all_words) do
     case word in all_words do
-      true -> {:ok, word}
+      true -> :ok
       _ -> :error
     end
   end

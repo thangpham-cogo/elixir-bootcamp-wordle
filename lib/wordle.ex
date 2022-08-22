@@ -1,77 +1,63 @@
 defmodule Wordle do
   @moduledoc """
-  Documentation for `Wordle`.
+  Wordle game in Elixir
   """
+  alias Wordle.{Game, Client, Dictionary}
 
   @all_words_file_path "#{File.cwd!()}/priv/all_words.txt"
   @all_secrets_file_path "#{File.cwd!()}/priv/words.txt"
   @num_of_guesses 4
+  @type game_state() :: %{
+          prompt: String.t(),
+          secret: String.t(),
+          all_words: list(String.t()),
+          num_of_guesses: non_neg_integer(),
+          attempts: list({guess :: String.t(), result :: Game.result_type()})
+        }
 
-  alias Wordle.{Game}
+  def start(), do: loop(init_game_state())
 
-  def start() do
-    all_words = load_word_list(@all_words_file_path)
-    secret = pick_secret_word(@all_secrets_file_path)
-    IO.puts("Secret is #{secret}")
-    loop(secret, all_words)
+  @spec init_game_state() :: game_state()
+  defp init_game_state() do
+    %{
+      prompt: next_prompt(@num_of_guesses),
+      all_words: Dictionary.load_word_list(@all_words_file_path),
+      secret: Dictionary.pick_word(@all_secrets_file_path),
+      num_of_guesses: @num_of_guesses,
+      attempts: []
+    }
   end
 
-  defp loop(secret, all_words, num_of_guesses \\ @num_of_guesses, attempts \\ [])
-  defp loop(secret, _, 0, _), do: end_game(secret)
+  @spec loop(game_state()) :: :ok
+  defp loop(%{secret: secret, num_of_guesses: 0}), do: Client.end_game(secret)
 
-  defp loop(secret, all_words, num_of_guesses, attempts) do
-    guess =
-      get_user_input(
-        "Enter a 5 leter word. You have #{num_of_guesses} guesses left.\n",
-        all_words
-      )
+  defp loop(state) do
+    with guess <- Client.get_user_input(state.prompt),
+         :ok <- Game.validate_word(guess, state.all_words) do
+      case Game.process_guess(guess, state.secret) do
+        :ok ->
+          Client.display_success(state.secret)
 
-    case Game.process_guess(guess, secret) do
-      :ok ->
-        display_success(secret)
+        {:ok, result} ->
+          next_state =
+            Map.merge(state, %{
+              attempts: state.attempts ++ [{guess, result}],
+              num_of_guesses: state.num_of_guesses - 1,
+              prompt: next_prompt(state.num_of_guesses - 1)
+            })
 
-      {:ok, reasons} ->
-        attempts = attempts ++ [{guess, reasons}]
-        display_reasons(attempts)
-        loop(secret, all_words, num_of_guesses - 1, attempts)
+          Client.display_attempts(next_state.attempts)
+          loop(next_state)
+      end
+    else
+      :error ->
+        loop(Map.put(state, :prompt, next_prompt(:invalid_input)))
     end
   end
 
-  defp get_user_input(prompt, all_words) do
-    IO.gets(prompt)
-    |> String.trim()
-    |> Game.validate_word(all_words)
-    |> case do
-      {:ok, word} -> word
-      :error -> get_user_input("That was not a valid word. Try again\n", all_words)
-    end
-  end
+  defp next_prompt(:invalid_input), do: "That was not a valid word. Try again\n"
 
-  defp display_success(word) do
-    IO.puts("You win. The secret word is #{word}")
-  end
-
-  defp load_word_list(path) do
-    path
-    |> File.read!()
-    |> String.split()
-  end
-
-  defp pick_secret_word(path) do
-    path
-    |> load_word_list()
-    |> Enum.random()
-  end
-
-  defp display_reasons(attempts) do
-    IO.puts("Guess again \n")
-
-    Enum.each(attempts, fn {guess, result} ->
-      IO.inspect(Enum.zip(String.graphemes(guess), result))
-    end)
-  end
-
-  defp end_game(secret) do
-    IO.puts(~s|You lose. The secret is "#{secret}"|)
+  defp next_prompt(num_of_guesses) do
+    "Enter a 5 letter word. You have #{num_of_guesses} guesses left.\n"
   end
 end
