@@ -5,7 +5,7 @@ defmodule Wordle do
 
   @all_words_file_path "#{File.cwd!()}/priv/all_words.txt"
   @all_secrets_file_path "#{File.cwd!()}/priv/words.txt"
-  @num_of_guesses 2
+  @num_of_guesses 4
 
   alias Wordle.{Game}
 
@@ -13,12 +13,13 @@ defmodule Wordle do
     all_words = load_word_list(@all_words_file_path)
     secret = pick_secret_word(@all_secrets_file_path)
     IO.puts("Secret is #{secret}")
-    loop(secret, all_words, @num_of_guesses)
+    loop(secret, all_words)
   end
 
-  defp loop(secret, _, 0), do: end_game(secret)
+  defp loop(secret, all_words, num_of_guesses \\ @num_of_guesses, attempts \\ [])
+  defp loop(secret, _, 0, _), do: end_game(secret)
 
-  defp loop(secret, all_words, num_of_guesses) do
+  defp loop(secret, all_words, num_of_guesses, attempts) do
     guess =
       get_user_input(
         "Enter a 5 leter word. You have #{num_of_guesses} guesses left.\n",
@@ -29,9 +30,10 @@ defmodule Wordle do
       :ok ->
         display_success(secret)
 
-      {:error, reasons} ->
-        display_reasons(reasons, guess)
-        loop(secret, all_words, num_of_guesses - 1)
+      {:ok, reasons} ->
+        attempts = attempts ++ [{guess, reasons}]
+        display_reasons(attempts)
+        loop(secret, all_words, num_of_guesses - 1, attempts)
     end
   end
 
@@ -61,9 +63,12 @@ defmodule Wordle do
     |> Enum.random()
   end
 
-  defp display_reasons(reasons, guess) do
+  defp display_reasons(attempts) do
     IO.puts("Guess again \n")
-    IO.inspect(Enum.zip(String.graphemes(guess), reasons))
+
+    Enum.each(attempts, fn {guess, result} ->
+      IO.inspect(Enum.zip(String.graphemes(guess), result))
+    end)
   end
 
   defp end_game(secret) do
