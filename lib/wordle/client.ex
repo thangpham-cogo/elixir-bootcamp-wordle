@@ -5,9 +5,22 @@ defmodule Wordle.Client do
     wrong_place: IO.ANSI.yellow_background()
   }
 
-  @spec get_user_input(String.t()) :: String.t()
-  def get_user_input(prompt) do
-    IO.gets(prompt)
+  @spec get_user_input(last_guess_valid :: boolean(), num_of_guesses :: non_neg_integer()) ::
+          String.t()
+  def get_user_input(true, num_of_guesses) do
+    "Enter a 5 letter word. You have #{num_of_guesses} guesses left.\n"
+    |> IO.gets()
+    |> format_input()
+  end
+
+  def get_user_input(false, _) do
+    "That was not a valid word. Try again\n"
+    |> IO.gets()
+    |> format_input()
+  end
+
+  defp format_input(input) do
+    input
     |> String.trim()
     |> String.downcase()
   end

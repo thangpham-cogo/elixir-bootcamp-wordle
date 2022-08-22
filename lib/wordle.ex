@@ -9,7 +9,7 @@ defmodule Wordle do
   @num_of_guesses 4
   @type attempt() :: {guess :: String.t(), result :: Game.result_type()}
   @type game_state() :: %{
-          prompt: String.t(),
+          last_guess_valid: boolean(),
           secret: String.t(),
           all_words: list(String.t()),
           num_of_guesses: non_neg_integer(),
@@ -21,7 +21,7 @@ defmodule Wordle do
   @spec init_game_state() :: game_state()
   defp init_game_state() do
     %{
-      prompt: next_prompt(@num_of_guesses),
+      last_guess_valid: true,
       all_words: Dictionary.load_word_list(@all_words_file_path),
       secret: Dictionary.pick_word(@all_secrets_file_path),
       num_of_guesses: @num_of_guesses,
@@ -35,7 +35,7 @@ defmodule Wordle do
   end
 
   defp loop(state) do
-    with guess <- Client.get_user_input(state.prompt),
+    with guess <- Client.get_user_input(state.last_guess_valid, state.num_of_guesses),
          :ok <- Game.validate_word(guess, state.all_words) do
       case Game.process_guess(guess, state.secret) do
         :win ->
@@ -45,8 +45,7 @@ defmodule Wordle do
           next_state =
             Map.merge(state, %{
               attempts: state.attempts ++ [{guess, result}],
-              num_of_guesses: state.num_of_guesses - 1,
-              prompt: next_prompt(state.num_of_guesses - 1)
+              num_of_guesses: state.num_of_guesses - 1
             })
 
           Client.display_attempts(next_state.attempts)
@@ -54,13 +53,7 @@ defmodule Wordle do
       end
     else
       :error ->
-        loop(Map.put(state, :prompt, next_prompt(:invalid_input)))
+        loop(Map.put(state, :last_guess_valid, false))
     end
-  end
-
-  defp next_prompt(:invalid_input), do: "That was not a valid word. Try again\n"
-
-  defp next_prompt(num_of_guesses) do
-    "Enter a 5 letter word. You have #{num_of_guesses} guesses left.\n"
   end
 end
