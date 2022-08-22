@@ -25,7 +25,7 @@ defmodule Wordle.Client do
     IO.puts(~s|You lose. The secret is #{IO.ANSI.green_background()}#{secret}|)
   end
 
-  defp color({char, :wrong}), do: [IO.ANSI.red_background(), char, IO.ANSI.reset()]
-  defp color({char, :correct}), do: [IO.ANSI.green_background(), char, IO.ANSI.reset()]
-  defp color({char, :wrong_place}), do: [IO.ANSI.yellow_background(), char, IO.ANSI.reset()]
+  defp color({char, :wrong}), do: [IO.ANSI.red_background(), char]
+  defp color({char, :correct}), do: [IO.ANSI.green_background(), char]
+  defp color({char, :wrong_place}), do: [IO.ANSI.yellow_background(), char]
 end
