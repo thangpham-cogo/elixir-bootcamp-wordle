@@ -6,7 +6,7 @@ defmodule Wordle do
 
   @all_words_file_path "#{File.cwd!()}/priv/all_words.txt"
   @all_secrets_file_path "#{File.cwd!()}/priv/words.txt"
-  @num_of_guesses 4
+  @num_of_guesses 6
   @type attempt() :: {guess :: String.t(), result :: Game.result_type()}
   @type game_state() :: %{
           last_guess_valid: boolean(),
@@ -31,15 +31,17 @@ defmodule Wordle do
 
   @spec loop(game_state()) :: :ok
   defp loop(%{secret: secret, num_of_guesses: num_of_guesses}) when num_of_guesses == 0 do
-    Client.end_game(secret)
+    Client.display_failure(secret)
+    restart_or_exit_game()
   end
 
   defp loop(state) do
-    with guess <- Client.get_user_input(state.last_guess_valid, state.num_of_guesses),
+    with guess <- Client.get_guess(state.last_guess_valid, state.num_of_guesses),
          :ok <- Game.validate_word(guess, state.all_words) do
       case Game.process_guess(guess, state.secret) do
         :win ->
           Client.display_success(state.secret)
+          restart_or_exit_game()
 
         {:ok, result} ->
           next_state =
@@ -54,6 +56,16 @@ defmodule Wordle do
     else
       :error ->
         loop(Map.put(state, :last_guess_valid, false))
+    end
+  end
+
+  defp restart_or_exit_game() do
+    response = Client.ask_user_to_restart()
+
+    if String.match?(response, ~r/yes/i) do
+      start()
+    else
+      :ok
     end
   end
 end

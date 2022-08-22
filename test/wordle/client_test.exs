@@ -4,7 +4,7 @@ defmodule Wordle.ClientTest do
 
   import ExUnit.CaptureIO
 
-  describe "get_user_input/2" do
+  describe "get_guess/2" do
     test "displays the right prompt if last guess was invalid" do
       formatted = "hello"
       prompt = "That was not a valid word. Try again\n"
@@ -12,7 +12,7 @@ defmodule Wordle.ClientTest do
 
       actual =
         capture_io([input: formatted, capture_prompt: true], fn ->
-          IO.write(Client.get_user_input(false, 5))
+          IO.write(Client.get_guess(false, 5))
         end)
 
       assert actual == expected
@@ -25,7 +25,7 @@ defmodule Wordle.ClientTest do
 
       actual =
         capture_io([input: formatted, capture_prompt: true], fn ->
-          IO.write(Client.get_user_input(true, 5))
+          IO.write(Client.get_guess(true, 5))
         end)
 
       assert actual == expected
@@ -36,15 +36,15 @@ defmodule Wordle.ClientTest do
 
       actual =
         capture_io([input: " HeLLo ", capture_prompt: false], fn ->
-          IO.write(Client.get_user_input(true, 5))
+          IO.write(Client.get_guess(true, 5))
         end)
 
       assert actual == expected
     end
   end
 
-  test "end_game displays the correct message" do
-    message = capture_io(fn -> Client.end_game("secret") end)
+  test "display_failure displays the correct message" do
+    message = capture_io(fn -> Client.display_failure("secret") end)
 
     assert String.match?(message, ~r/You lose.*secret/)
   end
